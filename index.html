@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Do You Want To See Yourself?</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Canvas for Party/Celebration Effect */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99999;
+    }
+
+    .container {
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+      padding: 2rem;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      z-index: 1;
+    }
+
+    h1, h2 {
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      position: relative;
+      min-height: 60px;
+    }
+
+    button {
+      padding: 12px 28px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-yes {
+      background: #22c55e;
+      color: white;
+    }
+    .btn-yes:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+    }
+
+    .btn-no {
+      background: #ef4444;
+      color: white;
+      position: relative;
+    }
+
+    /* Auto-Sizing Curtain & Stage Setup */
+    .stage {
+      position: relative;
+      width: 100%;
+      max-height: 70vh; /* Scalable height to prevent vertical overflowing */
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .stage img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain; /* Preserves entire image without cropping */
+      display: block;
+    }
+
+    .curtain {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      background: #881337;
+      z-index: 10;
+      transition: transform 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+      display: flex;
+      align-items: center;
+    }
+
+    .curtain-left {
+      left: 0;
+      border-right: 2px solid #fb7185;
+    }
+
+    .curtain-right {
+      right: 0;
+      border-left: 2px solid #fb7185;
+    }
+
+    /* Curtain Open Class */
+    .stage.open .curtain-left {
+      transform: translateX(-100%);
+    }
+    .stage.open .curtain-right {
+      transform: translateX(100%);
+    }
+
+    /* Helpers */
+    .hidden {
+      display: none !important;
+    }
+
+    /* Timed Prompt Styling */
+    .final-question-box {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .feedback-msg {
+      margin-top: 1rem;
+      font-size: 1.2rem;
+      color: #4ade80;
+      font-weight: 700;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="container">
+    
+    <!-- STEP 1: Initial Question -->
+    <div id="step-1">
+      <h1>Do you want to see yourself?</h1>
+      <div class="btn-group">
+        <button id="initial-yes" class="btn-yes">Yes</button>
+        <button id="initial-no" class="btn-no">No</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Curtain & Pictures -->
+    <div id="step-2" class="hidden">
+      <h2 id="congrats-title">🎉 Congratulations on making the right choice!</h2>
+      
+      <div id="stage" class="stage">
+        <div class="curtain curtain-left"></div>
+        <div class="curtain curtain-right"></div>
+        <img id="display-img" src="WhatsApp Image 2026-07-30 at 5.28.34 PM.jpeg" alt="Picture 1">
+      </div>
+
+      <button id="mistake-btn" class="btn-yes" style="background: #eab308; color: #000;">
+        Sorry, Mistake. This is the real picture of you!
+      </button>
+
+      <!-- STEP 3: Final Prompt (Appears after 5 seconds) -->
+      <div id="final-prompt" class="final-question-box hidden">
+        <h3>Did you like that?<br><small style="font-size:0.8rem; font-weight:normal;">Choose the correct button wisely...</small></h3>
+        <div class="btn-group">
+          <button id="final-yes" class="btn-yes">Yes</button>
+          <button id="final-no" class="btn-no">No</button>
+        </div>
+        <div id="truth-feedback" class="feedback-msg hidden">
+          Thanks for telling the truth! ❤️
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- DOM Elements ---
+    const initialNo = document.getElementById('initial-no');
+    const initialYes = document.getElementById('initial-yes');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const stage = document.getElementById('stage');
+    const displayImg = document.getElementById('display-img');
+    const mistakeBtn = document.getElementById('mistake-btn');
+    const finalPrompt = document.getElementById('final-prompt');
+    const finalYes = document.getElementById('final-yes');
+    const finalNo = document.getElementById('final-no');
+    const truthFeedback = document.getElementById('truth-feedback');
+
+    // --- 1. Evasive "No" Button Logic ---
+    const dodgeButton = () => {
+      const btnWidth = initialNo.offsetWidth;
+      const btnHeight = initialNo.offsetHeight;
+      
+      const maxX = window.innerWidth - btnWidth - 40;
+      const maxY = window.innerHeight - btnHeight - 40;
+
+      const randomX = Math.max(20, Math.floor(Math.random() * maxX));
+      const randomY = Math.max(20, Math.floor(Math.random() * maxY));
+
+      initialNo.style.position = 'fixed';
+      initialNo.style.left = `${randomX}px`;
+      initialNo.style.top = `${randomY}px`;
+      initialNo.style.zIndex = '9999';
+    };
+
+    initialNo.addEventListener('mouseover', dodgeButton);
+    initialNo.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dodgeButton();
+    });
+
+    // --- 2. Initial "Yes" Click & Curtain Unveil ---
+    initialYes.addEventListener('click', () => {
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+
+      setTimeout(() => {
+        stage.classList.add('open');
+      }, 300);
+    });
+
+    
+    // --- 3. Mistake Button Click & 5s Timer ---
+    mistakeBtn.addEventListener('click', () => {
+      displayImg.src = 'WhatsApp Image 2026-07-30 at 5.12.46 PM.jpeg';
+      mistakeBtn.classList.add('hidden');
+
+      setTimeout(() => {
+        finalPrompt.classList.remove('hidden');
+      }, 2000);
+    });
+
+    // --- 4. Final Question Choice (Button Swap & Celebration) ---
+    const handleFinalAnswer = (clickedBtn) => {
+      if (clickedBtn === 'no') {
+        // Swap button labels & colors
+        finalNo.innerText = 'Yes';
+        finalNo.style.background = '#22c55e';
+        
+        finalYes.innerText = 'No';
+        finalYes.style.background = '#ef4444';
+      }
+
+      truthFeedback.classList.remove('hidden');
+      finalNo.disabled = true;
+      finalYes.disabled = true;
+
+      // Trigger Party Confetti Effect
+      startCelebration();
+    };
+
+    finalYes.addEventListener('click', () => handleFinalAnswer('yes'));
+    finalNo.addEventListener('click', () => handleFinalAnswer('no'));
+
+    // --- 5. Celebration Confetti Engine ---
+    function startCelebration() {
+      const canvas = document.getElementById('confetti-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const particles = [];
+      const colors = ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'];
+
+      for (let i = 0; i < 120; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.7) * 14,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 10
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let active = false;
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.25; // Gravity
+          p.rotation += p.rotationSpeed;
+
+          if (p.y < canvas.height) active = true;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+
+        if (active) requestAnimationFrame(animate);
+      }
+
+      animate();
+    }
+  </script>
+</body>
+</html>
